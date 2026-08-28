@@ -12,8 +12,6 @@ excerpt: OpenSearch now supports running in a FIPS 140-3 compliant mode, contrib
 draft: true
 ---
 
-<!-- vale OpenSearch.Range = NO -->
-
 For many organizations, strong cryptography is not a feature to be configured—it is a prerequisite for deployment at all. With OpenSearch 3.6, OpenSearch can run in a FIPS 140-3 compliant mode, using validated cryptography for its security-relevant operations. This post explains what that means, why it matters, and how a multi-year collaboration between SAP, SAS, and AWS delivered it.
 
 ## Why FIPS 140-3 matters
@@ -32,25 +30,25 @@ A validated module has been independently tested and certified to implement appr
 
 In practice, running "in FIPS mode" means two things: every cryptographic operation is performed by a validated module, and the system is restricted to the algorithms and key sizes that the standard approves. Weaker or non-approved primitives are simply not available. For OpenSearch, achieving this meant auditing every place cryptography is used and making sure each one can operate entirely within an approved boundary. (The original community requests and the first proposal referred to FIPS 140-2, which was current at the time; over the life of the project the target moved to 140-3, and that is what OpenSearch delivers.)
 
-## A cross-company collaboration
+## How the collaboration came together
 
 FIPS support in OpenSearch is the result of a multi-year effort by SAP, SAS, and AWS, working in the open across several repositories, with contributors who crossed team boundaries to get it done.
 
 **The demand.** Community requests for FIPS compliance go back to the earliest days of the project, with [feature requests](https://github.com/opensearch-project/security/issues/1497) opened as far back as 2020 and 2021. The need was clear—regulated users could not adopt OpenSearch without it—but the work is substantial and cross-cutting, and it went unaddressed for years.
 
-**The foundation.** In late 2023, SAS Institute filed the [founding request for comments](https://github.com/opensearch-project/security/issues/3420) proposing a FIPS enforced mode and laying out a phased plan. SAS then did much of the early, unglamorous groundwork in the security plugin: replacing non-approved primitives—for example, moving field masking off `BLAKE2b` and switching password hashing from BCrypt to `PBKDF2`—and removing hardcoded assumptions about which cryptographic provider was in use. This proved that the security plugin could operate on approved cryptography at all.
+**The foundation.** In late 2023, SAS Institute filed the [founding request for comments](https://github.com/opensearch-project/security/issues/3420) proposing a FIPS enforced mode and laying out a phased plan. SAS then did much of the early, unglamorous groundwork in the Security plugin: replacing non-approved primitives—for example, moving field masking off `BLAKE2b` and switching password hashing from `bcrypt` to `PBKDF2`—and removing hard-coded assumptions about which cryptographic provider was in use. This proved that the Security plugin could operate on approved cryptography at all.
 
-**The plan.** In 2024, SAP contributed a [FIPS 140-3 compliance roadmap](https://github.com/opensearch-project/security/issues/4254) that reframed the effort around the current standard and, importantly, around a goal SAP held from the start: letting an administrator enable FIPS at runtime in a standard distribution, rather than requiring a special build compiled from source. Karsten Schnitter sponsored and coordinated the work on the SAP side, keeping it moving across teams and companies. This became the plan the project actually executed.
+**The plan.** In 2024, SAP contributed a [FIPS 140-3 compliance roadmap](https://github.com/opensearch-project/security/issues/4254) that refocused the effort around the current standard and, importantly, around a goal SAP held from the start: letting an administrator enable FIPS at runtime in a standard distribution, rather than requiring a special build compiled from source. Karsten Schnitter sponsored and coordinated the work on the SAP side, keeping it moving across teams and companies. This became the plan the project actually executed.
 
 **The execution.** SAP took on the deep core work: building the tooling to produce a FIPS distribution, and—the hardest part—making the entire OpenSearch test suite build and run under a FIPS-validated JVM, so that FIPS compliance could be verified continuously rather than assumed. An early attempt to land everything in one large pull request was deliberately abandoned in favor of a sequence of small, reviewable PRs, which is how the work finally merged.
 
-Along the way, the neat division of labor—SAP on core, SAS on the security plugin—gave way to something more collaborative. When AWS maintainers reviewing the core changes observed that a FIPS dependency cannot be cleanly confined to a single repository (it tends to become a prerequisite everywhere it touches), SAP's scope naturally extended into the security plugin as well, in coordination with SAS. People followed the problem wherever it led.
+Along the way, the neat division of labor—SAP on core, SAS on the Security plugin—gave way to something more collaborative. When AWS maintainers reviewing the core changes observed that a FIPS dependency cannot be cleanly confined to a single repository (it tends to become a prerequisite everywhere it touches), SAP's scope naturally extended into the Security plugin as well, in coordination with SAS. People followed the problem wherever it led.
 
 **Bringing it home.** AWS maintainers did more than review. They shaped the architecture through that review and then built key pieces of the runtime experience: the build switch that produces FIPS-capable binaries and the administrator-facing environment variable that turns enforcement on. A further step delivered the goal SAP had aimed at from the beginning—making the *default* OpenSearch distribution itself FIPS-capable. Before 3.6, running FIPS meant building a dedicated distribution from source with a special flag; by [shipping the validated Bouncy Castle FIPS libraries in the default distribution](https://github.com/opensearch-project/technical-steering/issues/77)—proposed by AWS's Craig Perkins and worked out in the open—3.6 lets operators turn FIPS on at runtime with no custom build.
 
 More recently, Eliatra joined the effort, with its security-plugin maintainers taking a leading role in driving the remaining enforced-mode work to completion. To align everyone on the final steps, contributors from SAP, SAS, AWS, and Eliatra gathered at OpenSearchCon Europe 2026—a meeting proposed by Andrew Ross and SAP's Karsten Schnitter—to agree on what remained and how to finish it.
 
-This is what the OpenSearch project's community model is meant to look like: a feature too large for any single company, built together in the open, with maintainers and contributors from different organizations reviewing each other's work and picking up whatever needed doing.
+This is what the OpenSearch Project's community model is meant to look like: a feature too large for any single company, built together in the open, with maintainers and contributors from different organizations reviewing each other's work and picking up whatever needed doing.
 
 ## How it works
 
@@ -71,12 +69,12 @@ FIPS support is officially available in OpenSearch 3.6. Enabling it is primarily
 1. **Run OpenSearch 3.6 or later on a supported JVM.** The default distribution is FIPS-capable and bundles the Bouncy Castle FIPS providers; you need a JVM configured to use them, on a Java version for which the module is certified.
 2. **Use FIPS-compliant keystores and truststores.** Convert your stores to `BCFKS`, or use a `PKCS#11` store. The bundled `opensearch-fips-demo-installer` tool can migrate the default JVM truststore for you and write the required settings into `jvm.options`—handy for getting started, though, as its name suggests, review it before relying on it in production.
 3. **Use strong passwords.** Keystore and key passwords must meet the 112-bit minimum, or OpenSearch will refuse to start.
-4. **Configure the security plugin for FIPS.** Use `PBKDF2` for internal user password hashing and a FIPS-approved algorithm for field masking instead of the default.
+4. **Configure the Security plugin for FIPS.** Use `PBKDF2` for internal user password hashing and a FIPS-approved algorithm for field masking instead of the default.
 5. **Turn on enforcement.** Start OpenSearch with `OPENSEARCH_FIPS_MODE=true` to run in FIPS-enforced mode.
 
-### What's next
+### What comes next
 
-FIPS support in OpenSearch is real and usable, and work continues. Some items remain in the security plugin and in integration testing—for example, broadening automated FIPS coverage and closing out the last enforcement details. If FIPS matters to your deployment, now is a great time to try it, file issues, and help shape the finishing touches.
+FIPS support in OpenSearch is real and usable, and work continues. Some items remain in the Security plugin and in integration testing—for example, broadening automated FIPS coverage and closing out the last enforcement details. If FIPS matters to your deployment, now is a great time to try it, file issues, and help shape the finishing touches.
 
 ## Special thanks
 
@@ -86,5 +84,5 @@ We would also like to thank:
 
 - The many community members who requested FIPS support over the years and kept the need visible.
 - **Terry Quigley** and the **SAS** team, who laid the foundation and were among the first to run FIPS mode in practice and report back what they found.
-- **Craig Perkins**, **Andriy Redko**, and the **AWS** maintainers, who reviewed the work and built the runtime enablement.
+- **Craig Perkins**, **Andriy Redko**, and the **AWS** maintainers, who reviewed the work and built the runtime support.
 - **Nils Bandener** and **Eliatra**, for helping drive the effort across the finish line.

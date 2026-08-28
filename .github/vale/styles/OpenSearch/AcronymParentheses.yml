@@ -38,8 +38,6 @@ exceptions:
   - RGB
   - ROM
   - SAML
-  - SAP
-  - SAS
   - SDK
   - SSL
   - TCP
