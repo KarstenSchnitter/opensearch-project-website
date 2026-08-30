@@ -46,7 +46,7 @@ Along the way, the neat division of labor—SAP on core, SAS on the Security plu
 
 **Bringing it home.** AWS maintainers did more than review. They shaped the architecture through that review and then built key pieces of the runtime experience: the build switch that produces FIPS-capable binaries and the administrator-facing environment variable that turns enforcement on. A further step delivered the goal SAP had aimed at from the beginning—making the *default* OpenSearch distribution itself FIPS-capable. Before 3.6, running FIPS meant building a dedicated distribution from source with a special flag; by [shipping the validated Bouncy Castle FIPS libraries in the default distribution](https://github.com/opensearch-project/technical-steering/issues/77)—proposed by AWS's Craig Perkins and worked out in the open—3.6 lets operators turn FIPS on at runtime with no custom build.
 
-More recently, Eliatra joined the effort, with its security-plugin maintainers taking a leading role in driving the remaining enforced-mode work to completion. To align everyone on the final steps, contributors from SAP, SAS, AWS, and Eliatra gathered at OpenSearchCon Europe 2026—a meeting proposed by Andrew Ross and SAP's Karsten Schnitter—to agree on what remained and how to finish it.
+More recently, the remaining enforced-mode work was driven toward completion by contributors from across the project. Ahead of OpenSearchCon Europe 2026, the collaborators planned and agreed to use the conference to align on the final steps, and they gathered there to settle what remained and how to finish it.
 
 This is what the OpenSearch Project's community model is meant to look like: a feature too large for any single company, built together in the open, with maintainers and contributors from different organizations reviewing each other's work and picking up whatever needed doing.
 
@@ -85,4 +85,4 @@ We would also like to thank:
 - The many community members who requested FIPS support over the years and kept the need visible.
 - **Terry Quigley** and the **SAS** team, who laid the foundation and were among the first to run FIPS mode in practice and report back what they found.
 - **Craig Perkins**, **Andriy Redko**, and the **AWS** maintainers, who reviewed the work and built the runtime support.
-- **Nils Bandener** and **Eliatra**, for helping drive the effort across the finish line.
+- **Nils Bandener**, for helping drive the effort across the finish line.
